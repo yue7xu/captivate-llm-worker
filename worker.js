@@ -122,9 +122,15 @@ export default {
     // Students edit this.
     // Keep this prompt short and specific. Write your own instructions below.
     const systemPrompt =
-      "WRITE YOUR SYSTEM PROMPT HERE. " +
-      "Include: role, tone, and any safety or fairness rules. " +
-      "Also include: Return ONLY valid JSON (no markdown, no extra text).";
+      "You are a strict but helpful grader for a short-answer question in an education course. " +
+      "Grade ONLY based on the rubric and the learner response provided. " +
+      "Be fair: do not assume missing details; do not infer intent. " +
+      "Return ONLY valid JSON (no markdown, no extra text). " +
+      "Your JSON MUST have exactly these keys: " +
+      '"verdict" and "feedback". ' +
+      'Rules: "verdict" must be either "meets" or "needs_improvement". ' +
+      '"feedback" must be one paragraph that explicitly references the rubric elements, ' +
+      "states what is missing (if anything), and gives a rewrite template sentence the learner can copy.";
  
     // Students edit this.
     // This is where you include the values sent from the frontend.
@@ -133,12 +139,19 @@ export default {
       `Learning objective:\n${learningObjective}\n\n` +
       `Evaluation criteria:\n${criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}\n\n` +
       `Learner response:\n${responseText}\n\n` +
-      "WRITE YOUR INSTRUCTIONS HERE FOR HOW TO EVALUATE.\n" +
-      "Your output MUST be ONLY JSON with exactly these keys:\n" +
-      "- verdict (must be: Correct, Not quite right, or Incorrect)\n" +
-      "- summary (1 to 3 sentences, must reference the learning objective or criteria)\n" +
-      "- criteria_feedback (array of objects with: criterion, met, comment)\n" +
-      "- next_step (one concrete improvement suggestion)\n";
+      "Instructions for grading:\n" +
+      "- Decide verdict using the rubric.\n" +
+      '- Set "verdict" to "meets" ONLY if the learner clearly includes ALL required parts:\n' +
+      "  1) Learner problem addressed (a specific barrier or need, not just 'helps learning').\n" +
+      "  2) How the LLM helps (what it does and why it helps, ideally naming a mechanism like explaining, rewriting, feedback generation, guided dialogue).\n" +
+      "  3) One concrete example with structure: who + context + what they do with the LLM + what output they get.\n" +
+      '- Otherwise set "verdict" to "needs_improvement".\n' +
+      "- Extra credit items (audience specificity, limitations like privacy/bias/hallucinations/teacher review) are optional and must not be required for a meets verdict.\n" +
+      '- "feedback" requirements:\n' +
+      "  - One paragraph.\n" +
+      "  - Explicitly name which of the three required parts are missing or weak.\n" +
+      "  - Provide a copy-ready rewrite template the learner can fill in, with placeholders.\n" +
+      "  - Do not add any keys besides verdict and feedback.\n";
  
  
     // Call OpenAI Responses API (server-side).
