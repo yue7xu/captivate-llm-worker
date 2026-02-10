@@ -23,6 +23,9 @@ export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
     const allowedOrigin = isAllowedOrigin(origin);
+
+    // DEBUG: server-side log (use Cloudflare logs or `wrangler tail`)
+    console.log("[worker] hit", request.method, request.url, "origin:", origin || "(none)");
  
     // Preflight (browser permission check).
     // Do not edit this section.
@@ -30,6 +33,22 @@ export default {
       return new Response(null, {
         status: 204,
         headers: corsHeaders(allowedOrigin)
+      });
+    }
+
+    // ✅ NEW: Allow GET so visiting the Worker URL in a browser shows a helpful message.
+    if (request.method === "GET") {
+      const headers = {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "X-Worker-Alive": "1"
+      };
+      // If this GET comes from your allowed site, include CORS headers.
+      if (allowedOrigin) Object.assign(headers, corsHeaders(allowedOrigin));
+
+      return new Response("OK. Worker is running. Send POST to use this API.", {
+        status: 200,
+        headers
       });
     }
  
@@ -206,9 +225,14 @@ export default {
       );
     }
  
+    // ✅ Small debug header so you can confirm the worker ran.
     return new Response(JSON.stringify(parsed), {
       status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders(allowedOrigin) }
+      headers: {
+        "Content-Type": "application/json",
+        "X-Worker-Alive": "1",
+        ...corsHeaders(allowedOrigin)
+      }
     });
  
     function extractTextFromResponsesOutput(d) {
